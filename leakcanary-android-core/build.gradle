@@ -25,6 +25,7 @@ dependencies {
   androidTestImplementation libs.androidX.test.runner
   androidTestImplementation libs.assertjCore
   androidTestImplementation project(':shark-hprof-test')
+  androidTestUtil libs.androidX.test.orchestrator
 }
 
 def gitSha() {
@@ -36,10 +37,16 @@ android {
   compileSdk versions.compileSdk
   defaultConfig {
     minSdk versions.minSdk
+    targetSdk versions.compileSdk
     buildConfigField "String", "LIBRARY_VERSION", "\"${rootProject.ext.VERSION_NAME}\""
     buildConfigField "String", "GIT_SHA", "\"${gitSha()}\""
     consumerProguardFiles 'consumer-proguard-rules.pro'
     testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+    testInstrumentationRunnerArguments clearPackageData: 'true'
+    testOptions {
+      execution 'ANDROIDX_TEST_ORCHESTRATOR'
+    }
   }
   lintOptions {
     disable 'GoogleAppIndexingWarning'
