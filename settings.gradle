@@ -25,4 +25,6 @@ include ':shark-log'
 include ':shark-test'
 include ':leakcanary-deobfuscation-gradle-plugin'
 
+include ':mydemo'
+
 enableFeaturePreview("VERSION_CATALOGS")

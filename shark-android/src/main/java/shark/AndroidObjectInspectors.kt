@@ -37,6 +37,9 @@ import shark.internal.InternalSharkCollectionsHelper
  * Most developers should use the entire set of default [ObjectInspector] by calling [appDefaults],
  * unless there's a bug and you temporarily want to remove an inspector.
  */
+
+var myWaitDebugListener: Runnable? = null
+
 enum class AndroidObjectInspectors : ObjectInspector {
 
   VIEW {

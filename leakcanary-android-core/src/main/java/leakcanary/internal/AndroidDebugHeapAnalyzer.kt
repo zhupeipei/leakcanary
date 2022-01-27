@@ -13,25 +13,16 @@ import leakcanary.internal.activity.LeakActivity
 import leakcanary.internal.activity.db.HeapAnalysisTable
 import leakcanary.internal.activity.db.LeakTable
 import leakcanary.internal.activity.db.LeaksDbHelper
-import shark.ConstantMemoryMetricsDualSourceProvider
-import shark.HeapAnalysis
-import shark.HeapAnalysisException
-import shark.HeapAnalysisFailure
-import shark.HeapAnalysisSuccess
-import shark.HeapAnalyzer
-import shark.HprofHeapGraph
+import shark.*
 import shark.HprofHeapGraph.Companion.openHeapGraph
-import shark.OnAnalysisProgressListener
 import shark.OnAnalysisProgressListener.Step.PARSING_HEAP_DUMP
 import shark.OnAnalysisProgressListener.Step.REPORTING_HEAP_ANALYSIS
-import shark.ProguardMappingReader
-import shark.ThrowingCancelableFileSourceProvider
 
 /**
  * This should likely turn into a public API but probably better to do once it's
  * coroutine based to supports cleaner cancellation + publishing progress.
  */
-internal object AndroidDebugHeapAnalyzer {
+object AndroidDebugHeapAnalyzer {
 
   private const val PROGUARD_MAPPING_FILE_NAME = "leakCanaryObfuscationMapping.txt"
 
@@ -124,7 +115,16 @@ internal object AndroidDebugHeapAnalyzer {
   private fun analyzeHeap(
     heapDumpFile: File,
     progressListener: OnAnalysisProgressListener,
-    isCanceled: () -> Boolean
+    isCanceled: () -> Boolean,
+  ): HeapAnalysis {
+    return analyzeHeap(heapDumpFile, progressListener, isCanceled, -1)
+  }
+
+  fun analyzeHeap(
+    heapDumpFile: File,
+    progressListener: OnAnalysisProgressListener,
+    isCanceled: () -> Boolean,
+    objectId: Long
   ): HeapAnalysis {
     val config = LeakCanary.config
     val heapAnalyzer = HeapAnalyzer(progressListener)
@@ -153,12 +153,22 @@ internal object AndroidDebugHeapAnalyzer {
         exception = HeapAnalysisException(throwable)
       )
     }
+
+    var leakFinder: LeakingObjectFinder? = null
+    if (objectId > 0) {
+      leakFinder = object : LeakingObjectFinder {
+        override fun findLeakingObjectIds(graph: HeapGraph): Set<Long> {
+          return setOf(objectId)
+        }
+      }
+    }
+
     return closeableGraph
       .use { graph ->
         val result = heapAnalyzer.analyze(
           heapDumpFile = heapDumpFile,
           graph = graph,
-          leakingObjectFinder = config.leakingObjectFinder,
+          leakingObjectFinder = leakFinder ?: config.leakingObjectFinder,
           referenceMatchers = config.referenceMatchers,
           computeRetainedHeapSize = config.computeRetainedHeapSize,
           objectInspectors = config.objectInspectors,
