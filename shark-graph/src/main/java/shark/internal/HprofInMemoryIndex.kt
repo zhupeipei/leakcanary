@@ -705,7 +705,7 @@ internal class HprofInMemoryIndex private constructor(
       val bytesForPrimitiveArraySize = byteSizeForUnsigned(maxPrimitiveArraySize)
 
       val indexBuilderListener = Builder(
-        longIdentifiers = hprofHeader.identifierByteSize == 8,
+        longIdentifiers = hprofHeader.identifierByteSize == 8, // flase
         maxPosition = bytesRead,
         classCount = classCount,
         instanceCount = instanceCount,
